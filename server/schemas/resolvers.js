@@ -1,4 +1,4 @@
-const { User, ProductSchema } = require("../models");
+const { User, productSchema } = require("../models");
 const { AuthenticationError } = require("apollo-server-express");
 const { signToken } = require("../utils/auth");
 require("dotenv").config();

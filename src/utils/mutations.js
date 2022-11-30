@@ -27,13 +27,13 @@ export const ADD_USER = gql`
 export const SAVE_PRODUCT = gql`
   mutation saveProduct(
     $name: String!
-    $category: String
-    $description: String
-    $price: Int
+    $category: String!
+    $description: String!
+    $price: Int!
     $id: Int!
-    $quantity: Int
+    $quantity: Int!
   ) {
-    saveRecipe(
+    saveProduct(
       name: $name
       category: $category
       description: $description

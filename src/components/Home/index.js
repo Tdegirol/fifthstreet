@@ -1,95 +1,93 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useApolloClient } from "@apollo/client";
+import { SAVE_PRODUCT } from "../../utils/mutations";
+import { GET_ME } from "../../utils/queries";
 import {
   Jumbotron,
   Container,
   CardColumns,
+  Row,
+  Col,
   Card,
   Modal,
   Button,
-  Row,
-  Col,
   Image,
-  ListGroup,
-  CloseButton,
+  Dropdown,
 } from "react-bootstrap";
-
-
+import productsArr from "../../utils/products.js";
+import sortProducts from "../../utils/helpers.js"
 
 const Home = () => {
-    const [showModal, setShowModal] = useState(false);
+  const { loading, data } = useQuery(GET_ME);
+  let userData = data?.me || {};
+  const user = data?.me;
+  const [saveProduct] = useMutation(SAVE_PRODUCT);
+  const [showModal, setShowModal] = useState(false);
+  const [cartProductIds, setCartProductIds] = useState([]);
+  const [sortOption, setSortOption] = useState('');
 
-    const [products] = useState([
-      {
-        name: 'Watermelon Tote Bag',
-        category: 'bag',
-        description: 'Watermelon handheld tote bag.',
-        price: 15,
-        id: 0
-      },
-      {
-        name: 'Mountains Print',
-        category: 'print',
-        description: 'Mountain landscape in frame 12" x 16".',
-        price: 20,
-        id: 1
-      },
-      {
-        name: 'Taco Money',
-        category: 'bag',
-        description: 'Zipper bag for your cash and cards.',
-        price: 15,
-        id: 2
-      },
-      {
-        name: 'Monstera Print',
-        category: 'print',
-        description: 'Monstera & cats painting in frame 12" x 16".',
-        price: 20,
-        id: 3
-      },
-      {
-        name: 'Shamrock Hat',
-        category: 'hat',
-        description: 'Hand stitched shamrock hat.',
-        price: 25,
-        id: 4
-      },
-      {
-        name: 'Wine Bags',
-        category: 'bag',
-        description: 'Wine bags.',
-        price: 15,
-        id: 5
-      },
-      {
-        name: 'Hot Sauce Bag',
-        category: 'bag',
-        description: 'Zipper bag for your hot sauce! or moneys or whatever.',
-        price: 15,
-        id: 6
-      },
-      {
-        name: 'Fifth Street Beanie',
-        category: 'hat',
-        description: 'Wool beanie fifth street printing Co! One size fits all.',
-        price: 25,
-        id: 7
-      }
-    ]);
-    const [currentProduct, setCurrentProduct] = useState(products[0]);
-    
-    const toggleModal = (products, i) => {
-      setCurrentProduct({ ...products, index: i });
-      setShowModal(!showModal);
-    };
+  const handleSort = (e) => {
+    setSortOption(e);
+  }
 
+  if (cartProductIds.length < user?.cartProductIds.length) {
+    setCartProductIds(user.cartProductIds)
+  }
+
+  const [products] = useState(productsArr);
+  const [currentProduct, setCurrentProduct] = useState(products[0]);
+
+  const handleAddToCart = async (id) => {
+    const productToAdd = products.find((product) => product.id === id);
+
+    try {
+      await saveProduct({
+        variables: {...productToAdd },
+      })
+      setCartProductIds([
+        ...cartProductIds, productToAdd.id
+      ])
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  
+  const toggleModal = (products, i) => {
+    setCurrentProduct({ ...products, index: i });
+    setShowModal(!showModal);
+  };
+
+  // useEffect(() => {
+  //   sortProducts(sortOption);
+  //   console.log(sortOption);
+  // }, [sortOption])
+  
     return (
       <>
         <Container>
-          <h1 id="home">Homepage</h1>
-          <CardColumns>
+          <h1>Welcome to Fifth Street</h1>
+          <div>
+            <Dropdown>
+              <Dropdown.Toggle
+                variant="light"
+              >
+                Sort Products:
+              </Dropdown.Toggle>
+                <p>{sortOption}</p>
+              <Dropdown.Menu>
+                <Dropdown.Item eventKey="Name" onSelect={handleSort}>Name</Dropdown.Item>
+                <Dropdown.Item eventKey="Price Low to High" onSelect={handleSort}>Price Low to High</Dropdown.Item>
+                <Dropdown.Item eventKey="Price High to Low" onSelect={handleSort}>Price High to Low</Dropdown.Item>
+              </Dropdown.Menu>
+
+            </Dropdown>
+          </div>
+
+          <Row xl={3}>
+            {sortProducts(sortOption)}
             {products.map((product, i) => {
-              return (
+              return (   
+              <Col xl={{order:i}}>
                 <Card key={product.id} border="white">
                   <Card.Img
                     src={require(`../../assets/products/${product.id}.jpg`)}
@@ -111,18 +109,16 @@ const Home = () => {
                     <Button
                       className="btn-block btn- border-dark"
                       variant="light"
-                      onClick={() => {
-                        setCurrentProduct(products[i])
-                        toggleModal(product, i)
-                      }}
+                      onClick={() => handleAddToCart(product.id)}
                     >
                       Add to cart
                     </Button>
                   </Card.Body>
-              </Card>
+                </Card>
+              </Col>
               )
             })}
-          </CardColumns>
+          </Row>
         </Container>
         <Modal
           size='xl'
